@@ -1,0 +1,512 @@
+/* ==========================
+   GLOBAL
+========================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+:root{
+
+    --bg:#08111f;
+    --panel:#132238cc;
+
+    --border:#2f4664;
+
+    --green:#4ade80;
+    --blue:#60a5fa;
+    --yellow:#facc15;
+    --red:#f87171;
+
+    --text:#f8fafc;
+    --muted:#94a3b8;
+}
+
+html,
+body{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    font-family:
+    Inter,
+    Segoe UI,
+    sans-serif;
+
+    background:
+    radial-gradient(circle at top,
+    #152a46,
+    #08111f 65%);
+
+    color:var(--text);
+}
+
+/* ==========================
+   LAYOUT
+========================== */
+
+#gameContainer{
+
+    width:100%;
+    height:100%;
+
+    display:flex;
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:15px;
+}
+
+/* ==========================
+   HUD
+========================== */
+
+#hud{
+
+    width:min(1200px,95vw);
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(3,1fr);
+
+    gap:15px;
+}
+
+.panel{
+
+    background:var(--panel);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(15px);
+
+    border-radius:18px;
+
+    padding:15px;
+
+    box-shadow:
+    0 8px 24px rgba(0,0,0,.35);
+}
+
+.panel h3{
+
+    margin-bottom:10px;
+
+    color:var(--green);
+
+    font-size:1rem;
+}
+
+/* ==========================
+   STATS
+========================== */
+
+.stat-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:8px 0;
+
+    font-size:.95rem;
+}
+
+.stat-row span:first-child{
+    color:var(--muted);
+}
+
+/* ==========================
+   XP BAR
+========================== */
+
+.xp-bar{
+
+    width:100%;
+    height:14px;
+
+    margin-top:10px;
+
+    overflow:hidden;
+
+    border-radius:999px;
+
+    background:#0f172a;
+}
+
+#xpFill{
+
+    width:0%;
+
+    height:100%;
+
+    border-radius:999px;
+
+    background:
+    linear-gradient(
+        90deg,
+        #2563eb,
+        #60a5fa
+    );
+
+    transition:
+    width .4s ease;
+}
+
+/* ==========================
+   CANVAS
+========================== */
+
+#gameCanvas{
+
+    width:min(800px,95vw);
+    height:min(800px,95vw);
+
+    background:
+    linear-gradient(
+        180deg,
+        #0f172a,
+        #020617
+    );
+
+    border-radius:24px;
+
+    border:
+    2px solid rgba(255,255,255,.08);
+
+    box-shadow:
+    0 0 40px rgba(0,0,0,.55),
+    0 0 25px rgba(74,222,128,.15);
+}
+
+/* ==========================
+   CONTROLS
+========================== */
+
+#controls{
+
+    display:flex;
+
+    gap:12px;
+
+    justify-content:center;
+
+    align-items:center;
+}
+
+button{
+
+    border:none;
+
+    cursor:pointer;
+
+    color:white;
+
+    font-weight:600;
+
+    transition:
+    transform .15s ease,
+    opacity .15s ease,
+    background .2s ease;
+}
+
+button:hover{
+
+    transform:translateY(-2px);
+}
+
+button:active{
+
+    transform:translateY(1px);
+}
+
+/* MAIN BUTTONS */
+
+#controls button{
+
+    background:
+    linear-gradient(
+        180deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    padding:
+    12px 20px;
+
+    border-radius:12px;
+
+    min-width:120px;
+}
+
+/* ==========================
+   MODALS
+========================== */
+
+.modal{
+
+    position:fixed;
+
+    inset:0;
+
+    background:
+    rgba(0,0,0,.65);
+
+    backdrop-filter:blur(10px);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    z-index:1000;
+}
+
+.hidden{
+    display:none;
+}
+
+.modal-content{
+
+    width:min(550px,92vw);
+
+    background:
+    rgba(15,23,42,.95);
+
+    border:
+    1px solid rgba(255,255,255,.08);
+
+    border-radius:20px;
+
+    padding:25px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:15px;
+
+    box-shadow:
+    0 20px 40px rgba(0,0,0,.45);
+}
+
+.modal-content.large{
+
+    width:min(800px,95vw);
+}
+
+.modal-content h2{
+
+    text-align:center;
+
+    color:var(--green);
+}
+
+/* ==========================
+   CLOSE BUTTON
+========================== */
+
+.close-btn{
+
+    margin-top:10px;
+
+    background:
+    linear-gradient(
+        180deg,
+        #334155,
+        #1e293b
+    );
+
+    padding:12px;
+
+    border-radius:12px;
+}
+
+/* ==========================
+   PAUSE MENU
+========================== */
+
+#pauseMenu button{
+
+    background:
+    linear-gradient(
+        180deg,
+        #2563eb,
+        #1e40af
+    );
+
+    padding:14px;
+
+    border-radius:12px;
+}
+
+/* ==========================
+   POPUPS
+========================== */
+
+#achievementPopup,
+#levelUpPopup{
+
+    position:fixed;
+
+    left:50%;
+    transform:translateX(-50%);
+
+    top:-120px;
+
+    z-index:3000;
+
+    padding:
+    15px 30px;
+
+    border-radius:15px;
+
+    font-weight:bold;
+
+    box-shadow:
+    0 10px 25px rgba(0,0,0,.4);
+
+    transition:
+    top .4s ease;
+}
+
+#achievementPopup{
+
+    background:
+    linear-gradient(
+        180deg,
+        #facc15,
+        #eab308
+    );
+
+    color:#111827;
+}
+
+#levelUpPopup{
+
+    background:
+    linear-gradient(
+        180deg,
+        #4ade80,
+        #22c55e
+    );
+
+    color:#02120a;
+}
+
+#achievementPopup.show,
+#levelUpPopup.show{
+
+    top:20px;
+}
+
+/* ==========================
+   MOBILE CONTROLS
+========================== */
+
+#mobileControls{
+
+    display:none;
+
+    position:fixed;
+
+    bottom:20px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:500;
+}
+
+#mobileControls button{
+
+    width:70px;
+    height:70px;
+
+    border-radius:16px;
+
+    background:
+    rgba(15,23,42,.85);
+
+    border:
+    1px solid rgba(255,255,255,.08);
+
+    font-size:24px;
+}
+
+.middle-row{
+
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+
+/* ==========================
+   SCROLLBAR
+========================== */
+
+::-webkit-scrollbar{
+
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+
+    background:#111827;
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#334155;
+
+    border-radius:999px;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:900px){
+
+    #hud{
+
+        grid-template-columns:1fr;
+    }
+
+    #gameCanvas{
+
+        width:95vw;
+        height:95vw;
+    }
+
+    #mobileControls{
+
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    #controls{
+
+        flex-wrap:wrap;
+    }
+}
+
+@media(max-height:850px){
+
+    #gameCanvas{
+
+        width:min(70vh,90vw);
+        height:min(70vh,90vw);
+    }
+}
