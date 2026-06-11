@@ -1,15 +1,14 @@
-// LOOK-AHEAD GOD AI (NO CHEATS, FUTURE-SAFE)
+// CLEAN GOD AI (NO WALL HACKS, REAL RULES ONLY)
 
 (function () {
 
     const GRID = GRID_SIZE;
-    const ACTIVATE_LENGTH = 30;
-    const LOOKAHEAD_DEPTH = 6;
+    const ACTIVATE_LENGTH = 15;
 
     if (window.HAM_AI) clearInterval(window.HAM_AI);
 
     // =========================
-    // HAMILTONIAN CYCLE
+    // HAMILTONIAN CYCLE (LEGAL MOVEMENT ONLY)
     // =========================
     const cycle = [];
 
@@ -23,52 +22,28 @@
 
     cycle.push(cycle[0]);
 
-    function cycleIndex(head) {
+    function findCycleIndex(head) {
         for (let i = 0; i < cycle.length; i++) {
-            if (cycle[i].x === head.x && cycle[i].y === head.y) return i;
+            if (cycle[i].x === head.x && cycle[i].y === head.y) {
+                return i;
+            }
         }
         return -1;
     }
 
     // =========================
-    // SAFE CHECK
+    // REAL SAFETY CHECK (NO HACKING)
     // =========================
-    function isSafe(x, y, body) {
+    function isSafe(x, y) {
         if (x < 0 || y < 0 || x >= GRID || y >= GRID) return false;
-        return !body.some(s => s.x === x && s.y === y);
+
+        return !snake.some(s => s.x === x && s.y === y);
     }
 
     // =========================
-    // SIMULATE FUTURE (CORE IDEA)
+    // BFS (REAL PATHFINDING ONLY)
     // =========================
-    function simulate(path, depth) {
-
-        let simSnake = JSON.parse(JSON.stringify(snake));
-
-        for (let i = 0; i < Math.min(depth, path.length - 1); i++) {
-
-            const next = path[i + 1];
-
-            simSnake.unshift({ x: next.x, y: next.y });
-
-            simSnake.pop();
-
-            // if collision happens → invalid path
-            if (simSnake.slice(1).some(s =>
-                s.x === simSnake[0].x &&
-                s.y === simSnake[0].y
-            )) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // =========================
-    // BFS FOOD PATH
-    // =========================
-    function bfs() {
+    function bfsToFood() {
 
         if (!food) return null;
 
@@ -101,17 +76,15 @@
                 const ny = node.y + d.y;
                 const key = nx + "," + ny;
 
-                if (isSafe(nx, ny, snake)) {
-                    if (!visited.has(key)) {
+                if (!isSafe(nx, ny)) continue;
+                if (visited.has(key)) continue;
 
-                        visited.add(key);
+                visited.add(key);
 
-                        queue.push([
-                            ...path,
-                            { x: nx, y: ny }
-                        ]);
-                    }
-                }
+                queue.push([
+                    ...path,
+                    { x: nx, y: ny }
+                ]);
             }
         }
 
@@ -119,9 +92,9 @@
     }
 
     // =========================
-    // SAFE FALLBACK
+    // SAFE MOVE FALLBACK
     // =========================
-    function fallback() {
+    function fallbackMove() {
 
         const head = snake[0];
 
@@ -132,12 +105,9 @@
             { x: 0, y: -1 }
         ];
 
+        // choose ANY safe move (no guessing walls, no hacks)
         for (const d of dirs) {
-
-            const nx = head.x + d.x;
-            const ny = head.y + d.y;
-
-            if (isSafe(nx, ny, snake)) {
+            if (isSafe(head.x + d.x, head.y + d.y)) {
                 return d;
             }
         }
@@ -155,11 +125,11 @@
         const head = snake[0];
 
         // =========================
-        // PHASE 1: HAMILTONIAN
+        // PHASE 1: HAMILTONIAN (ONLY AFTER LENGTH)
         // =========================
         if (snake.length >= ACTIVATE_LENGTH) {
 
-            const idx = cycleIndex(head);
+            const idx = findCycleIndex(head);
             if (idx === -1) return;
 
             const next = cycle[(idx + 1) % cycle.length];
@@ -169,29 +139,25 @@
         }
 
         // =========================
-        // PHASE 0: LOOK-AHEAD FOOD AI
+        // PHASE 0: REAL FOOD AI (NO CHEATS)
         // =========================
-        const path = bfs();
+        const path = bfsToFood();
 
         if (path && path.length > 1) {
 
-            // simulate safety before committing
-            if (simulate(path, LOOKAHEAD_DEPTH)) {
-
-                const next = path[1];
-                setDirection(next.x - head.x, next.y - head.y);
-                return;
-            }
+            const next = path[1];
+            setDirection(next.x - head.x, next.y - head.y);
+            return;
         }
 
-        // fallback if unsafe
-        const safe = fallback();
+        // fallback safe movement
+        const safe = fallbackMove();
 
         if (safe) {
             setDirection(safe.x, safe.y);
         }
 
-    }, 60);
+    }, 70);
 
-    console.log("LOOK-AHEAD GOD AI ENABLED (future-safe + Hamiltonian)");
+    console.log("CLEAN GOD AI ENABLED (NO WALL HACKS)");
 })();
