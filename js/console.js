@@ -1,60 +1,60 @@
-const bot = setInterval(() => {
+// AUTO-SNAKE GOD MODE
 
-    if (!GameState.started || GameState.paused) return;
+window.autoSnake = setInterval(() => {
+
+    if (!food || !snake || !snake.length) return;
 
     const head = snake[0];
 
-    const moves = [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 }
-    ];
+    const dx = food.x - head.x;
+    const dy = food.y - head.y;
 
-    const validMoves = moves.filter(m => {
+    // Prefer horizontal movement first
+    if (Math.abs(dx) > Math.abs(dy)) {
 
-        if (
-            m.x === -direction.x &&
-            m.y === -direction.y
-        ) {
-            return false;
-        }
+        if (dx > 0 && direction.x !== -1)
+            nextDirection = { x: 1, y: 0 };
 
-        const nx = head.x + m.x;
-        const ny = head.y + m.y;
+        else if (dx < 0 && direction.x !== 1)
+            nextDirection = { x: -1, y: 0 };
 
-        if (
-            nx < 0 ||
-            ny < 0 ||
-            nx >= GRID_SIZE ||
-            ny >= GRID_SIZE
-        ) {
-            return false;
-        }
+        else if (dy > 0 && direction.y !== -1)
+            nextDirection = { x: 0, y: 1 };
 
-        return !snake.some(s =>
-            s.x === nx &&
-            s.y === ny
-        );
-    });
+        else if (dy < 0 && direction.y !== 1)
+            nextDirection = { x: 0, y: -1 };
 
-    if (!validMoves.length) return;
+    } else {
 
-    validMoves.sort((a, b) => {
+        if (dy > 0 && direction.y !== -1)
+            nextDirection = { x: 0, y: 1 };
 
-        const da =
-            Math.abs(food.x - (head.x + a.x)) +
-            Math.abs(food.y - (head.y + a.y));
+        else if (dy < 0 && direction.y !== 1)
+            nextDirection = { x: 0, y: -1 };
 
-        const db =
-            Math.abs(food.x - (head.x + b.x)) +
-            Math.abs(food.y - (head.y + b.y));
+        else if (dx > 0 && direction.x !== -1)
+            nextDirection = { x: 1, y: 0 };
 
-        return da - db;
-    });
+        else if (dx < 0 && direction.x !== 1)
+            nextDirection = { x: -1, y: 0 };
+    }
 
-    nextDirection = validMoves[0];
+    // Emergency wall avoidance
+    const headX = snake[0].x;
+    const headY = snake[0].y;
 
-}, 20);
+    if (headX <= 0 && direction.x < 0)
+        nextDirection = { x: 0, y: 1 };
 
-clearInterval(bot);
+    if (headX >= GRID_SIZE - 1 && direction.x > 0)
+        nextDirection = { x: 0, y: 1 };
+
+    if (headY <= 0 && direction.y < 0)
+        nextDirection = { x: 1, y: 0 };
+
+    if (headY >= GRID_SIZE - 1 && direction.y > 0)
+        nextDirection = { x: 1, y: 0 };
+
+}, 10);
+
+console.log("Auto-food God Mode enabled");
