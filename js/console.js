@@ -1,60 +1,47 @@
-// AUTO-SNAKE GOD MODE
+window.GOD_AI = setInterval(() => {
 
-window.autoSnake = setInterval(() => {
-
-    if (!food || !snake || !snake.length) return;
+    if (!GameState.started || GameState.paused || !food) return;
 
     const head = snake[0];
 
-    const dx = food.x - head.x;
-    const dy = food.y - head.y;
+    const options = [];
 
-    // Prefer horizontal movement first
-    if (Math.abs(dx) > Math.abs(dy)) {
-
-        if (dx > 0 && direction.x !== -1)
-            nextDirection = { x: 1, y: 0 };
-
-        else if (dx < 0 && direction.x !== 1)
-            nextDirection = { x: -1, y: 0 };
-
-        else if (dy > 0 && direction.y !== -1)
-            nextDirection = { x: 0, y: 1 };
-
-        else if (dy < 0 && direction.y !== 1)
-            nextDirection = { x: 0, y: -1 };
-
-    } else {
-
-        if (dy > 0 && direction.y !== -1)
-            nextDirection = { x: 0, y: 1 };
-
-        else if (dy < 0 && direction.y !== 1)
-            nextDirection = { x: 0, y: -1 };
-
-        else if (dx > 0 && direction.x !== -1)
-            nextDirection = { x: 1, y: 0 };
-
-        else if (dx < 0 && direction.x !== 1)
-            nextDirection = { x: -1, y: 0 };
+    // safe direction helper
+    function canGo(dir) {
+        return !(dir.x === -direction.x && dir.y === -direction.y);
     }
 
-    // Emergency wall avoidance
-    const headX = snake[0].x;
-    const headY = snake[0].y;
+    // evaluate 4 directions
+    const dirs = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+    ];
 
-    if (headX <= 0 && direction.x < 0)
-        nextDirection = { x: 0, y: 1 };
+    for (const d of dirs) {
+        if (!canGo(d)) continue;
 
-    if (headX >= GRID_SIZE - 1 && direction.x > 0)
-        nextDirection = { x: 0, y: 1 };
+        const nx = head.x + d.x;
+        const ny = head.y + d.y;
 
-    if (headY <= 0 && direction.y < 0)
-        nextDirection = { x: 1, y: 0 };
+        // wall safety check
+        if (nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE) continue;
 
-    if (headY >= GRID_SIZE - 1 && direction.y > 0)
-        nextDirection = { x: 1, y: 0 };
+        // self collision check
+        if (snake.some(s => s.x === nx && s.y === ny)) continue;
 
-}, 10);
+        const dist =
+            Math.abs(food.x - nx) + Math.abs(food.y - ny);
 
-console.log("Auto-food God Mode enabled");
+        options.push({ d, dist });
+    }
+
+    if (options.length) {
+        options.sort((a, b) => a.dist - b.dist);
+        setDirection(options[0].d.x, options[0].d.y);
+    }
+
+}, 80);
+
+console.log("Safer GOD AI enabled");
