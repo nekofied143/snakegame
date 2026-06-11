@@ -1,21 +1,26 @@
-// HAMILTONIAN GOD MODE (IMMORTAL AI)
+// HAMILTONIAN GOD MODE (GATED + SAFE)
 
 (function () {
 
-    const n = GRID_SIZE;
+    const GRID = GRID_SIZE;
+    const ACTIVATE_LENGTH = 15; // change this threshold if needed
 
-    // build Hamiltonian cycle for even grid sizes
+    // prevent multiple intervals
+    if (window.HAM_AI) {
+        clearInterval(window.HAM_AI);
+    }
+
+    // build Hamiltonian cycle (serpentine)
     const cycle = [];
 
-    // snake path: serpentine rows
-    for (let y = 0; y < n; y++) {
+    for (let y = 0; y < GRID; y++) {
 
         if (y % 2 === 0) {
-            for (let x = 0; x < n; x++) {
+            for (let x = 0; x < GRID; x++) {
                 cycle.push({ x, y });
             }
         } else {
-            for (let x = n - 1; x >= 0; x--) {
+            for (let x = GRID - 1; x >= 0; x--) {
                 cycle.push({ x, y });
             }
         }
@@ -24,9 +29,6 @@
     // close loop
     cycle.push(cycle[0]);
 
-    let index = 0;
-
-    // find current head position in cycle
     function findIndex() {
 
         const head = snake[0];
@@ -37,24 +39,33 @@
             }
         }
 
-        return 0;
+        return -1;
     }
 
     window.HAM_AI = setInterval(() => {
 
-        if (!GameState.started || GameState.paused) return;
+        if (!GameState.started || GameState.paused || GameState.dead) return;
 
-        index = findIndex();
+        // ✅ GATE CONDITION
+        if (snake.length < ACTIVATE_LENGTH) return;
 
-        const next = cycle[(index + 1) % cycle.length];
+        const idx = findIndex();
+
+        if (idx === -1) return;
+
+        const next = cycle[(idx + 1) % cycle.length];
         const head = snake[0];
 
         const dx = next.x - head.x;
         const dy = next.y - head.y;
 
+        // IMPORTANT: use your safe input system
         setDirection(dx, dy);
 
     }, 80);
 
-    console.log("HAMILTONIAN GOD MODE ENABLED (IMMORTAL SNAKE)");
+    console.log(
+        `HAMILTONIAN GOD MODE READY (activates at length ${ACTIVATE_LENGTH})`
+    );
+
 })();
