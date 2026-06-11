@@ -3,7 +3,7 @@
 (function () {
 
     const GRID = GRID_SIZE;
-    const ACTIVATE_LENGTH = 100;
+    const ACTIVATE_LENGTH = 30;
     const LOOKAHEAD_DEPTH = 6;
 
     if (window.HAM_AI) clearInterval(window.HAM_AI);
