@@ -2,16 +2,9 @@ window.GOD_AI = setInterval(() => {
 
     if (!GameState.started || GameState.paused || !food) return;
 
-    const head = snake[0];
+    const start = snake[0];
+    const target = food;
 
-    const options = [];
-
-    // safe direction helper
-    function canGo(dir) {
-        return !(dir.x === -direction.x && dir.y === -direction.y);
-    }
-
-    // evaluate 4 directions
     const dirs = [
         { x: 1, y: 0 },
         { x: -1, y: 0 },
@@ -19,29 +12,76 @@ window.GOD_AI = setInterval(() => {
         { x: 0, y: -1 }
     ];
 
+    function key(p) {
+        return p.x + "," + p.y;
+    }
+
+    function isSafe(x, y) {
+
+        if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE)
+            return false;
+
+        return !snake.some(s => s.x === x && s.y === y);
+    }
+
+    // BFS to food
+    const queue = [[start]];
+    const visited = new Set();
+    visited.add(key(start));
+
+    let path = null;
+
+    while (queue.length) {
+
+        const currentPath = queue.shift();
+        const node = currentPath[currentPath.length - 1];
+
+        if (node.x === target.x && node.y === target.y) {
+            path = currentPath;
+            break;
+        }
+
+        for (const d of dirs) {
+
+            const nx = node.x + d.x;
+            const ny = node.y + d.y;
+            const k = nx + "," + ny;
+
+            if (!isSafe(nx, ny) || visited.has(k)) continue;
+
+            visited.add(k);
+
+            queue.push([
+                ...currentPath,
+                { x: nx, y: ny }
+            ]);
+        }
+    }
+
+    // FOLLOW PATH IF FOUND
+    if (path && path.length > 1) {
+
+        const next = path[1];
+
+        const dx = next.x - start.x;
+        const dy = next.y - start.y;
+
+        setDirection(dx, dy);
+        return;
+    }
+
+    // FALLBACK: SAFE MOVE (SURVIVAL MODE)
     for (const d of dirs) {
-        if (!canGo(d)) continue;
 
-        const nx = head.x + d.x;
-        const ny = head.y + d.y;
+        const nx = start.x + d.x;
+        const ny = start.y + d.y;
 
-        // wall safety check
-        if (nx < 0 || ny < 0 || nx >= GRID_SIZE || ny >= GRID_SIZE) continue;
-
-        // self collision check
-        if (snake.some(s => s.x === nx && s.y === ny)) continue;
-
-        const dist =
-            Math.abs(food.x - nx) + Math.abs(food.y - ny);
-
-        options.push({ d, dist });
+        if (isSafe(nx, ny)) {
+            setDirection(d.x, d.y);
+            return;
+        }
     }
 
-    if (options.length) {
-        options.sort((a, b) => a.dist - b.dist);
-        setDirection(options[0].d.x, options[0].d.y);
-    }
+}, 60);
 
-}, 80);
-
-console.log("Safer GOD AI enabled");
+console.log("REAL GOD AI ENABLED");
