@@ -1,87 +1,60 @@
-window.GOD_AI = setInterval(() => {
+// HAMILTONIAN GOD MODE (IMMORTAL AI)
 
-    if (!GameState.started || GameState.paused || !food) return;
+(function () {
 
-    const start = snake[0];
-    const target = food;
+    const n = GRID_SIZE;
 
-    const dirs = [
-        { x: 1, y: 0 },
-        { x: -1, y: 0 },
-        { x: 0, y: 1 },
-        { x: 0, y: -1 }
-    ];
+    // build Hamiltonian cycle for even grid sizes
+    const cycle = [];
 
-    function key(p) {
-        return p.x + "," + p.y;
-    }
+    // snake path: serpentine rows
+    for (let y = 0; y < n; y++) {
 
-    function isSafe(x, y) {
-
-        if (x < 0 || y < 0 || x >= GRID_SIZE || y >= GRID_SIZE)
-            return false;
-
-        return !snake.some(s => s.x === x && s.y === y);
-    }
-
-    // BFS to food
-    const queue = [[start]];
-    const visited = new Set();
-    visited.add(key(start));
-
-    let path = null;
-
-    while (queue.length) {
-
-        const currentPath = queue.shift();
-        const node = currentPath[currentPath.length - 1];
-
-        if (node.x === target.x && node.y === target.y) {
-            path = currentPath;
-            break;
-        }
-
-        for (const d of dirs) {
-
-            const nx = node.x + d.x;
-            const ny = node.y + d.y;
-            const k = nx + "," + ny;
-
-            if (!isSafe(nx, ny) || visited.has(k)) continue;
-
-            visited.add(k);
-
-            queue.push([
-                ...currentPath,
-                { x: nx, y: ny }
-            ]);
+        if (y % 2 === 0) {
+            for (let x = 0; x < n; x++) {
+                cycle.push({ x, y });
+            }
+        } else {
+            for (let x = n - 1; x >= 0; x--) {
+                cycle.push({ x, y });
+            }
         }
     }
 
-    // FOLLOW PATH IF FOUND
-    if (path && path.length > 1) {
+    // close loop
+    cycle.push(cycle[0]);
 
-        const next = path[1];
+    let index = 0;
 
-        const dx = next.x - start.x;
-        const dy = next.y - start.y;
+    // find current head position in cycle
+    function findIndex() {
+
+        const head = snake[0];
+
+        for (let i = 0; i < cycle.length; i++) {
+            if (cycle[i].x === head.x && cycle[i].y === head.y) {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
+    window.HAM_AI = setInterval(() => {
+
+        if (!GameState.started || GameState.paused) return;
+
+        index = findIndex();
+
+        const next = cycle[(index + 1) % cycle.length];
+        const head = snake[0];
+
+        const dx = next.x - head.x;
+        const dy = next.y - head.y;
 
         setDirection(dx, dy);
-        return;
-    }
 
-    // FALLBACK: SAFE MOVE (SURVIVAL MODE)
-    for (const d of dirs) {
+    }, 80);
 
-        const nx = start.x + d.x;
-        const ny = start.y + d.y;
-
-        if (isSafe(nx, ny)) {
-            setDirection(d.x, d.y);
-            return;
-        }
-    }
-
-}, 60);
-
-console.log("REAL GOD AI ENABLED");
+    console.log("HAMILTONIAN GOD MODE ENABLED (IMMORTAL SNAKE)");
+})();
