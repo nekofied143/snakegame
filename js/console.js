@@ -1,6 +1,6 @@
-// 3-LAYER PREDICTION AI (SAFETY + FUTURE + FOOD VALUE)
+window.AI = window.AI || {};
 
-(function () {
+window.AI.start3LayerAI = function () {
 
     const GRID = GRID_SIZE;
 
@@ -30,8 +30,6 @@
 
         sim.unshift(newHead);
 
-        // if no food → tail moves
-        // if food → tail stays (growth)
         if (!shouldGrow) {
             sim.pop();
         }
@@ -40,7 +38,7 @@
     }
 
     // =========================
-    // CAN REACH TAIL (FLOOD FILL)
+    // CAN REACH TAIL CHECK
     // =========================
     function canReachTail(simSnake) {
 
@@ -89,7 +87,7 @@
     }
 
     // =========================
-    // LAYER 3: FOOD SCORE
+    // FOOD SCORE
     // =========================
     function foodScore(simSnake) {
 
@@ -105,7 +103,7 @@
     }
 
     // =========================
-    // EVALUATE MOVE (3-LAYER SYSTEM)
+    // EVALUATION SYSTEM
     // =========================
     function evaluate(dir) {
 
@@ -114,33 +112,23 @@
         const nx = head.x + dir.x;
         const ny = head.y + dir.y;
 
-        // =========================
-        // LAYER 1: IMMEDIATE SAFETY
-        // =========================
+        // LAYER 1: immediate safety
         if (!isSafe(nx, ny, snake)) {
             return -9999;
         }
 
-        const willEat =
-            food && nx === food.x && ny === food.y;
+        const willEat = food && nx === food.x && ny === food.y;
 
-        // =========================
-        // LAYER 2: FUTURE SAFETY
-        // =========================
+        // LAYER 2: future safety
         const sim = simulateState(dir, willEat);
 
         if (!canReachTail(sim)) {
-            return -5000; // trap risk
+            return -5000;
         }
 
-        // =========================
-        // LAYER 3: FOOD VALUE
-        // =========================
-        let score = 0;
+        // LAYER 3: food value
+        let score = foodScore(sim);
 
-        score += foodScore(sim);
-
-        // reward survival stability
         if (canReachTail(sim)) {
             score += 50;
         }
@@ -149,7 +137,7 @@
     }
 
     // =========================
-    // MAIN LOOP
+    // START AI LOOP
     // =========================
     window.HAM_AI = setInterval(() => {
 
@@ -181,5 +169,6 @@
 
     }, 60);
 
-    console.log("3-LAYER PREDICTION AI ENABLED (SAFETY + FUTURE + FOOD)");
-})();
+    console.log("3-LAYER AI STARTED");
+
+};
