@@ -1,9 +1,10 @@
-// PERFECT GOD AI: BFS FOOD HUNT → SAFE SURVIVAL → HAMILTONIAN MODE
+// LOOK-AHEAD GOD AI (NO CHEATS, FUTURE-SAFE)
 
 (function () {
 
     const GRID = GRID_SIZE;
-    const ACTIVATE_LENGTH = 50;
+    const ACTIVATE_LENGTH = 100;
+    const LOOKAHEAD_DEPTH = 6;
 
     if (window.HAM_AI) clearInterval(window.HAM_AI);
 
@@ -22,23 +23,52 @@
 
     cycle.push(cycle[0]);
 
-    function findCycleIndex() {
-        const h = snake[0];
+    function cycleIndex(head) {
         for (let i = 0; i < cycle.length; i++) {
-            if (cycle[i].x === h.x && cycle[i].y === h.y) return i;
+            if (cycle[i].x === head.x && cycle[i].y === head.y) return i;
         }
         return -1;
     }
 
-    function isSafe(x, y) {
+    // =========================
+    // SAFE CHECK
+    // =========================
+    function isSafe(x, y, body) {
         if (x < 0 || y < 0 || x >= GRID || y >= GRID) return false;
-        return !snake.some(s => s.x === x && s.y === y);
+        return !body.some(s => s.x === x && s.y === y);
     }
 
     // =========================
-    // BFS PATHFINDING TO FOOD
+    // SIMULATE FUTURE (CORE IDEA)
     // =========================
-    function bfsToFood() {
+    function simulate(path, depth) {
+
+        let simSnake = JSON.parse(JSON.stringify(snake));
+
+        for (let i = 0; i < Math.min(depth, path.length - 1); i++) {
+
+            const next = path[i + 1];
+
+            simSnake.unshift({ x: next.x, y: next.y });
+
+            simSnake.pop();
+
+            // if collision happens → invalid path
+            if (simSnake.slice(1).some(s =>
+                s.x === simSnake[0].x &&
+                s.y === simSnake[0].y
+            )) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // =========================
+    // BFS FOOD PATH
+    // =========================
+    function bfs() {
 
         if (!food) return null;
 
@@ -71,15 +101,17 @@
                 const ny = node.y + d.y;
                 const key = nx + "," + ny;
 
-                if (!isSafe(nx, ny)) continue;
-                if (visited.has(key)) continue;
+                if (isSafe(nx, ny, snake)) {
+                    if (!visited.has(key)) {
 
-                visited.add(key);
+                        visited.add(key);
 
-                queue.push([
-                    ...path,
-                    { x: nx, y: ny }
-                ]);
+                        queue.push([
+                            ...path,
+                            { x: nx, y: ny }
+                        ]);
+                    }
+                }
             }
         }
 
@@ -87,9 +119,9 @@
     }
 
     // =========================
-    // SAFE MOVE FALLBACK
+    // SAFE FALLBACK
     // =========================
-    function fallbackMove() {
+    function fallback() {
 
         const head = snake[0];
 
@@ -101,7 +133,11 @@
         ];
 
         for (const d of dirs) {
-            if (isSafe(head.x + d.x, head.y + d.y)) {
+
+            const nx = head.x + d.x;
+            const ny = head.y + d.y;
+
+            if (isSafe(nx, ny, snake)) {
                 return d;
             }
         }
@@ -110,7 +146,7 @@
     }
 
     // =========================
-    // MAIN AI LOOP
+    // MAIN LOOP
     // =========================
     window.HAM_AI = setInterval(() => {
 
@@ -118,36 +154,38 @@
 
         const head = snake[0];
 
-        // =====================================================
-        // PHASE 3: HAMILTONIAN MODE (IMMORTAL)
-        // =====================================================
+        // =========================
+        // PHASE 1: HAMILTONIAN
+        // =========================
         if (snake.length >= ACTIVATE_LENGTH) {
 
-            const idx = findCycleIndex();
+            const idx = cycleIndex(head);
             if (idx === -1) return;
 
             const next = cycle[(idx + 1) % cycle.length];
 
             setDirection(next.x - head.x, next.y - head.y);
-
             return;
         }
 
-        // =====================================================
-        // PHASE 1/2: PERFECT FOOD HUNT + SURVIVAL
-        // =====================================================
-
-        const path = bfsToFood();
+        // =========================
+        // PHASE 0: LOOK-AHEAD FOOD AI
+        // =========================
+        const path = bfs();
 
         if (path && path.length > 1) {
 
-            const next = path[1];
-            setDirection(next.x - head.x, next.y - head.y);
-            return;
+            // simulate safety before committing
+            if (simulate(path, LOOKAHEAD_DEPTH)) {
+
+                const next = path[1];
+                setDirection(next.x - head.x, next.y - head.y);
+                return;
+            }
         }
 
-        // fallback if food unreachable
-        const safe = fallbackMove();
+        // fallback if unsafe
+        const safe = fallback();
 
         if (safe) {
             setDirection(safe.x, safe.y);
@@ -155,5 +193,5 @@
 
     }, 60);
 
-    console.log("PERFECT GOD AI ENABLED (FOOD → SAFETY → HAMILTONIAN)");
+    console.log("LOOK-AHEAD GOD AI ENABLED (future-safe + Hamiltonian)");
 })();
