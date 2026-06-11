@@ -1,54 +1,59 @@
-// CLEAN GOD AI (NO WALL HACKS, REAL RULES ONLY)
+// 3-LAYER PREDICTION AI (SAFETY + FUTURE + FOOD VALUE)
 
 (function () {
 
     const GRID = GRID_SIZE;
-    const ACTIVATE_LENGTH = 15;
 
     if (window.HAM_AI) clearInterval(window.HAM_AI);
 
     // =========================
-    // HAMILTONIAN CYCLE (LEGAL MOVEMENT ONLY)
+    // BASIC MOVE SAFETY
     // =========================
-    const cycle = [];
-
-    for (let y = 0; y < GRID; y++) {
-        if (y % 2 === 0) {
-            for (let x = 0; x < GRID; x++) cycle.push({ x, y });
-        } else {
-            for (let x = GRID - 1; x >= 0; x--) cycle.push({ x, y });
-        }
-    }
-
-    cycle.push(cycle[0]);
-
-    function findCycleIndex(head) {
-        for (let i = 0; i < cycle.length; i++) {
-            if (cycle[i].x === head.x && cycle[i].y === head.y) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    // =========================
-    // REAL SAFETY CHECK (NO HACKING)
-    // =========================
-    function isSafe(x, y) {
+    function isSafe(x, y, body) {
         if (x < 0 || y < 0 || x >= GRID || y >= GRID) return false;
-
-        return !snake.some(s => s.x === x && s.y === y);
+        return !body.some(s => s.x === x && s.y === y);
     }
 
     // =========================
-    // BFS (REAL PATHFINDING ONLY)
+    // SIMULATE MOVE WITH GROWTH AWARENESS
     // =========================
-    function bfsToFood() {
+    function simulateState(dir, shouldGrow) {
 
-        if (!food) return null;
+        const sim = JSON.parse(JSON.stringify(snake));
 
-        const start = snake[0];
-        const target = food;
+        const head = sim[0];
+
+        const newHead = {
+            x: head.x + dir.x,
+            y: head.y + dir.y
+        };
+
+        sim.unshift(newHead);
+
+        // if no food → tail moves
+        // if food → tail stays (growth)
+        if (!shouldGrow) {
+            sim.pop();
+        }
+
+        return sim;
+    }
+
+    // =========================
+    // CAN REACH TAIL (FLOOD FILL)
+    // =========================
+    function canReachTail(simSnake) {
+
+        const head = simSnake[0];
+        const tail = simSnake[simSnake.length - 1];
+
+        const queue = [head];
+        const visited = new Set();
+        visited.add(head.x + "," + head.y);
+
+        const blocked = new Set(
+            simSnake.slice(0, -1).map(s => s.x + "," + s.y)
+        );
 
         const dirs = [
             { x: 1, y: 0 },
@@ -57,17 +62,12 @@
             { x: 0, y: -1 }
         ];
 
-        const queue = [[start]];
-        const visited = new Set();
-        visited.add(start.x + "," + start.y);
-
         while (queue.length) {
 
-            const path = queue.shift();
-            const node = path[path.length - 1];
+            const node = queue.shift();
 
-            if (node.x === target.x && node.y === target.y) {
-                return path;
+            if (node.x === tail.x && node.y === tail.y) {
+                return true;
             }
 
             for (const d of dirs) {
@@ -76,43 +76,76 @@
                 const ny = node.y + d.y;
                 const key = nx + "," + ny;
 
-                if (!isSafe(nx, ny)) continue;
+                if (nx < 0 || ny < 0 || nx >= GRID || ny >= GRID) continue;
                 if (visited.has(key)) continue;
+                if (blocked.has(key)) continue;
 
                 visited.add(key);
-
-                queue.push([
-                    ...path,
-                    { x: nx, y: ny }
-                ]);
+                queue.push({ x: nx, y: ny });
             }
         }
 
-        return null;
+        return false;
     }
 
     // =========================
-    // SAFE MOVE FALLBACK
+    // LAYER 3: FOOD SCORE
     // =========================
-    function fallbackMove() {
+    function foodScore(simSnake) {
+
+        const head = simSnake[0];
+
+        if (!food) return 0;
+
+        const dist =
+            Math.abs(head.x - food.x) +
+            Math.abs(head.y - food.y);
+
+        return 100 - dist;
+    }
+
+    // =========================
+    // EVALUATE MOVE (3-LAYER SYSTEM)
+    // =========================
+    function evaluate(dir) {
 
         const head = snake[0];
 
-        const dirs = [
-            { x: 1, y: 0 },
-            { x: -1, y: 0 },
-            { x: 0, y: 1 },
-            { x: 0, y: -1 }
-        ];
+        const nx = head.x + dir.x;
+        const ny = head.y + dir.y;
 
-        // choose ANY safe move (no guessing walls, no hacks)
-        for (const d of dirs) {
-            if (isSafe(head.x + d.x, head.y + d.y)) {
-                return d;
-            }
+        // =========================
+        // LAYER 1: IMMEDIATE SAFETY
+        // =========================
+        if (!isSafe(nx, ny, snake)) {
+            return -9999;
         }
 
-        return null;
+        const willEat =
+            food && nx === food.x && ny === food.y;
+
+        // =========================
+        // LAYER 2: FUTURE SAFETY
+        // =========================
+        const sim = simulateState(dir, willEat);
+
+        if (!canReachTail(sim)) {
+            return -5000; // trap risk
+        }
+
+        // =========================
+        // LAYER 3: FOOD VALUE
+        // =========================
+        let score = 0;
+
+        score += foodScore(sim);
+
+        // reward survival stability
+        if (canReachTail(sim)) {
+            score += 50;
+        }
+
+        return score;
     }
 
     // =========================
@@ -122,42 +155,31 @@
 
         if (!GameState.started || GameState.paused || GameState.dead) return;
 
-        const head = snake[0];
+        const dirs = [
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+            { x: 0, y: 1 },
+            { x: 0, y: -1 }
+        ];
 
-        // =========================
-        // PHASE 1: HAMILTONIAN (ONLY AFTER LENGTH)
-        // =========================
-        if (snake.length >= ACTIVATE_LENGTH) {
+        let bestDir = null;
+        let bestScore = -Infinity;
 
-            const idx = findCycleIndex(head);
-            if (idx === -1) return;
+        for (const d of dirs) {
 
-            const next = cycle[(idx + 1) % cycle.length];
+            const score = evaluate(d);
 
-            setDirection(next.x - head.x, next.y - head.y);
-            return;
+            if (score > bestScore) {
+                bestScore = score;
+                bestDir = d;
+            }
         }
 
-        // =========================
-        // PHASE 0: REAL FOOD AI (NO CHEATS)
-        // =========================
-        const path = bfsToFood();
-
-        if (path && path.length > 1) {
-
-            const next = path[1];
-            setDirection(next.x - head.x, next.y - head.y);
-            return;
+        if (bestDir) {
+            setDirection(bestDir.x, bestDir.y);
         }
 
-        // fallback safe movement
-        const safe = fallbackMove();
+    }, 60);
 
-        if (safe) {
-            setDirection(safe.x, safe.y);
-        }
-
-    }, 70);
-
-    console.log("CLEAN GOD AI ENABLED (NO WALL HACKS)");
+    console.log("3-LAYER PREDICTION AI ENABLED (SAFETY + FUTURE + FOOD)");
 })();
